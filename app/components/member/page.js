@@ -23,14 +23,18 @@ export default function Members() {
     key: "member_id",
     direction: "ascending",
   });
+  const [loading, setLoading] = useState(false);
 
   // Fetch members from the server
   const fetchMembers = async () => {
+    setLoading(true);
     try {
       const response = await axios.get("/api/members");
       setMemberList(response.data);
     } catch (error) {
       console.error("Failed to fetch members: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -326,7 +330,12 @@ export default function Members() {
             </div>
           </div>
 
-          {filteredMembers.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4 animate-pulse">⏳</div>
+              <p className="text-gray-500 text-lg">กำลังโหลดข้อมูลสมาชิก...</p>
+            </div>
+          ) : filteredMembers.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">
                 {searchTerm || gradeFilter !== "all" ? "🔍" : "👥"}

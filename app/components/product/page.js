@@ -14,14 +14,18 @@ export default function Products() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Fetch products from the server
   const fetchProducts = async () => {
+    setLoading(true);
     try {
       const response = await axios.get("/api/products");
       setList(response.data);
     } catch (error) {
       console.error("Failed to fetch products: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -144,7 +148,12 @@ export default function Products() {
             )}
           </h2>
 
-          {list.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4 animate-pulse">⏳</div>
+              <p className="text-gray-500 text-lg">กำลังโหลดข้อมูลสินค้า...</p>
+            </div>
+          ) : list.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📦</div>
               <p className="text-gray-500 text-lg">
