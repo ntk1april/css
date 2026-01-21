@@ -20,7 +20,7 @@ export default function Members() {
   const [viewingImage, setViewingImage] = useState(null);
   const [gradeFilter, setGradeFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState({
-    key: null,
+    key: "member_id",
     direction: "ascending",
   });
 
