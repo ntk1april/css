@@ -89,9 +89,9 @@ export default function Transactions() {
       รหัสการขาย: "",
       วันที่และเวลา: "",
       ชื่อสมาชิก: "ยอดขายทั้งหมด",
-      รหัสสมาชิก: "",
+      รหัสสมาชิก: totalSales.toFixed(2) + " บาท",
       จำนวนสินค้า: "",
-      ยอดรวม: totalSales.toFixed(2) + " บาท",
+      ยอดรวม: "",
       ยอดที่จ่าย: "",
       เงินทอน: "",
     });
@@ -128,7 +128,7 @@ export default function Transactions() {
     ws["!cols"] = [
       { width: 20 },
       { width: 20 },
-      { width: 20 },
+      { width: 30 },
       { width: 12 },
       { width: 12 },
       { width: 10 },
