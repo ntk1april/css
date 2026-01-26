@@ -1,25 +1,31 @@
 import mongoose, { Schema } from "mongoose";
 
 const productSchema = new Schema({
-    product_id: {
-        type: Number,
-        required: true,
-        unique: true,
-    },
-    product_name: {
-        type: String,
-        required: true,
-    },
-    price: {
-        type: Number,
-        required: true,
-    },
-    amount: {
-        type: Number,
-        required: true,
-    },
-    });
+  product_id: {
+    type: Number,
+    required: true,
+    unique: true,
+  },
+  product_name: {
+    type: String,
+    required: true,
+  },
+  category: {
+    type: String,
+    required: false,
+    default: "ทั่วไป",
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+  amount: {
+    type: Number,
+    required: true,
+  },
+});
 
-    productSchema.index({ unique: true });
+productSchema.index({ unique: true });
 
-export default mongoose.models.Product || mongoose.model("Product", productSchema);
+export default mongoose.models.Product ||
+  mongoose.model("Product", productSchema);

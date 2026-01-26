@@ -300,7 +300,7 @@ export default function Members() {
 
             <div className="flex gap-4 flex max-w-2xl justify-end">
               {/* Grade Filter */}
-              <div className="w-36">
+              <div className="w-42">
                 <select
                   value={gradeFilter}
                   onChange={(e) => setGradeFilter(e.target.value)}

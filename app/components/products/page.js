@@ -8,6 +8,7 @@ export default function Products() {
   const [formData, setFormData] = useState({
     product_id: "",
     product_name: "",
+    category: "ทั่วไป",
     price: "",
     amount: "",
   });
@@ -15,6 +16,12 @@ export default function Products() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState({
+    key: "product_id",
+    direction: "ascending",
+  });
 
   // Fetch products from the server
   const fetchProducts = async () => {
@@ -37,6 +44,7 @@ export default function Products() {
     setFormData({
       product_id: "",
       product_name: "",
+      category: "ทั่วไป",
       price: "",
       amount: "",
     });
@@ -48,6 +56,7 @@ export default function Products() {
     setFormData({
       product_id: product.product_id,
       product_name: product.product_name,
+      category: product.category || "ทั่วไป",
       price: product.price,
       amount: product.amount,
     });
@@ -76,6 +85,7 @@ export default function Products() {
       setFormData({
         product_id: "",
         product_name: "",
+        category: "ทั่วไป",
         price: "",
         amount: "",
       });
@@ -98,6 +108,7 @@ export default function Products() {
       const updateData = {
         newProductId: formData.product_id,
         newProductName: formData.product_name,
+        newCategory: formData.category,
         newPrice: formData.price,
         newAmount: formData.amount,
       };
@@ -121,6 +132,111 @@ export default function Products() {
     }
   };
 
+  // Delete product
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "ลบสินค้า?",
+      text: "คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้?",
+      showCancelButton: true,
+      confirmButtonText: "ใช่, ลบเลย",
+      cancelButtonText: "ยกเลิก",
+    });
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`/api/products?id=${id}`);
+        Swal.fire({
+          icon: "success",
+          title: "ลบเรียบร้อยแล้ว!",
+          text: "ลบสินค้าเรียบร้อยแล้ว",
+        });
+        fetchProducts();
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        Swal.fire({
+          icon: "error",
+          title: "เกิดข้อผิดพลาด!",
+          text: "ไม่สามารถลบสินค้าได้ กรุณาลองใหม่อีกครั้ง",
+        });
+      }
+    }
+  };
+
+  // Handle sorting
+  const requestSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Get unique categories from products
+  const categories = React.useMemo(() => {
+    const uniqueCategories = [
+      ...new Set(list.map((p) => p.category || "ทั่วไป")),
+    ];
+    return uniqueCategories.sort();
+  }, [list]);
+
+  // Filter and sort products
+  const filteredProducts = React.useMemo(() => {
+    let filtered = list.filter((product) => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        product.product_id.toString().includes(searchLower) ||
+        product.product_name.toLowerCase().includes(searchLower) ||
+        (product.category || "ทั่วไป").toLowerCase().includes(searchLower);
+
+      const matchesCategory =
+        categoryFilter === "all" ||
+        (product.category || "ทั่วไป") === categoryFilter;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle numeric sorting for ID, Price, and Amount
+        if (
+          sortConfig.key === "product_id" ||
+          sortConfig.key === "price" ||
+          sortConfig.key === "amount"
+        ) {
+          aValue = parseFloat(aValue);
+          bValue = parseFloat(bValue);
+        } else if (typeof aValue === "string") {
+          aValue = aValue.toLowerCase();
+          bValue = (bValue || "").toLowerCase();
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return filtered;
+  }, [list, searchTerm, categoryFilter, sortConfig]);
+
+  const getCategoryBadgeColor = (category) => {
+    const colors = {
+      อาหาร: "bg-green-100 text-green-700",
+      เครื่องดื่ม: "bg-blue-100 text-blue-700",
+      ขนม: "bg-yellow-100 text-yellow-700",
+      สกินแคร์: "bg-purple-100 text-purple-700",
+      อุปกรณ์การเรียน: "bg-indigo-100 text-indigo-700",
+      ทั่วไป: "bg-gray-100 text-gray-700",
+    };
+    return colors[category] || "bg-gray-100 text-gray-700";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Page Header */}
@@ -139,25 +255,66 @@ export default function Products() {
       {/* Products Table */}
       <div className="max-w-7xl mx-auto">
         <div className="card-modern">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">
-            <span className="text-indigo-600">📦</span> รายการสินค้า
-            {list.length > 0 && (
-              <span className="ml-3 text-lg font-normal text-gray-600">
-                ({list.length} {list.length === 1 ? "ชิ้น/อัน" : "ชิ้น/อัน"})
-              </span>
-            )}
-          </h2>
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <h2 className="text-2xl font-bold text-gray-800">
+              <span className="text-indigo-600">📦</span> รายการสินค้า
+              {list.length > 0 && (
+                <span className="ml-3 text-lg font-normal text-gray-600">
+                  ({filteredProducts.length} จาก {list.length})
+                </span>
+              )}
+            </h2>
+
+            <div className="flex gap-4 flex-wrap max-w-2xl justify-end">
+              {/* Category Filter */}
+              <div className="w-40">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="input-modern w-full"
+                >
+                  <option value="all">ทุกหมวดหมู่</option>
+                  <option value="ทั่วไป">ทั่วไป</option>
+                  <option value="อาหาร">อาหาร</option>
+                  <option value="เครื่องดื่ม">เครื่องดื่ม</option>
+                  <option value="ขนม">ขนม</option>
+                  <option value="สกินแคร์">สกินแคร์</option>
+                  <option value="อุปกรณ์การเรียน">อุปกรณ์การเรียน</option>
+                  {/* {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))} */}
+                </select>
+              </div>
+
+              {/* Search Filter */}
+              <div className="flex-1 max-w-md">
+                <input
+                  type="text"
+                  placeholder="🔍 ค้นหาด้วยรหัส, ชื่อ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-modern w-full"
+                />
+              </div>
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4 animate-pulse">⏳</div>
               <p className="text-gray-500 text-lg">กำลังโหลดข้อมูลสินค้า...</p>
             </div>
-          ) : list.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-6xl mb-4">📦</div>
+              <div className="text-6xl mb-4">
+                {searchTerm || categoryFilter !== "all" ? "🔍" : "📦"}
+              </div>
               <p className="text-gray-500 text-lg">
-                ไม่พบสินค้า กรุณาเพิ่มสินค้าใหม่
+                {searchTerm || categoryFilter !== "all"
+                  ? "ไม่พบสินค้าที่ตรงกับการค้นหา"
+                  : "ไม่พบสินค้า กรุณาเพิ่มสินค้าใหม่"}
               </p>
             </div>
           ) : (
@@ -165,21 +322,89 @@ export default function Products() {
               <table className="table-modern">
                 <thead>
                   <tr>
-                    <th className="w-40">รหัสสินค้า</th>
-                    <th>ชื่อสินค้า</th>
-                    <th className="w-32 text-center">ราคา</th>
-                    <th className="w-32 text-center">จำนวน</th>
-                    <th className="w-48 text-center"></th>
+                    <th
+                      className="w-36 cursor-pointer hover:bg-opacity-90 transition-colors select-none"
+                      onClick={() => requestSort("product_id")}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        รหัสสินค้า
+                        {sortConfig.key === "product_id" && (
+                          <span>
+                            {sortConfig.direction === "ascending" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="w-50 cursor-pointer hover:bg-opacity-90 transition-colors select-none"
+                      onClick={() => requestSort("product_name")}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        ชื่อสินค้า
+                        {sortConfig.key === "product_name" && (
+                          <span>
+                            {sortConfig.direction === "ascending" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="w-50 cursor-pointer hover:bg-opacity-90 transition-colors select-none"
+                      onClick={() => requestSort("category")}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        หมวดหมู่
+                        {sortConfig.key === "category" && (
+                          <span>
+                            {sortConfig.direction === "ascending" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="w-36 text-center cursor-pointer hover:bg-opacity-90 transition-colors select-none"
+                      onClick={() => requestSort("price")}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        ราคา
+                        {sortConfig.key === "price" && (
+                          <span>
+                            {sortConfig.direction === "ascending" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="w-32 text-center cursor-pointer hover:bg-opacity-90 transition-colors select-none"
+                      onClick={() => requestSort("amount")}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        จำนวน
+                        {sortConfig.key === "amount" && (
+                          <span>
+                            {sortConfig.direction === "ascending" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-50 text-center"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {list.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product._id}>
                       <td className="font-mono text-sm text-center">
                         {product.product_id}
                       </td>
                       <td className="font-semibold text-center">
                         {product.product_name}
+                      </td>
+                      <td className="text-center">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-semibold ${getCategoryBadgeColor(product.category || "ทั่วไป")}`}
+                        >
+                          {product.category || "ทั่วไป"}
+                        </span>
                       </td>
                       <td className="text-center font-semibold text-green-600">
                         {product.price.toFixed(2)} บาท
@@ -204,6 +429,12 @@ export default function Products() {
                             className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-all duration-200"
                           >
                             แก้ไข
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product._id)}
+                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-all duration-200"
+                          >
+                            ลบ
                           </button>
                         </div>
                       </td>
@@ -265,6 +496,29 @@ export default function Products() {
                   placeholder="กรุณาระบุชื่อสินค้า"
                   required
                 />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  หมวดหมู่
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="input-modern w-full"
+                >
+                  <option value="ทั่วไป">ทั่วไป</option>
+                  <option value="อาหาร">อาหาร</option>
+                  <option value="เครื่องดื่ม">เครื่องดื่ม</option>
+                  <option value="ขนม">ขนม</option>
+                  <option value="สกินแคร์">สกินแคร์</option>
+                  <option value="อุปกรณ์การเรียน">อุปกรณ์การเรียน</option>
+                </select>
               </div>
 
               <div>
@@ -374,6 +628,29 @@ export default function Products() {
                   placeholder="กรุณาระบุชื่อสินค้า"
                   required
                 />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="edit_category"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  หมวดหมู่
+                </label>
+                <select
+                  id="edit_category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="input-modern w-full"
+                >
+                  <option value="ทั่วไป">ทั่วไป</option>
+                  <option value="อาหาร">อาหาร</option>
+                  <option value="เครื่องดื่ม">เครื่องดื่ม</option>
+                  <option value="ขนม">ขนม</option>
+                  <option value="สกินแคร์">สกินแคร์</option>
+                  <option value="อุปกรณ์การเรียน">อุปกรณ์การเรียน</option>
+                </select>
               </div>
 
               <div>

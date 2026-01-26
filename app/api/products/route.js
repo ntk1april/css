@@ -10,15 +10,22 @@ export async function GET() {
 
 export async function POST(req) {
   await connectDB();
-  const { product_id, product_name, price, amount } = await req.json();
+  const { product_id, product_name, category, price, amount } =
+    await req.json();
   const existingProduct = await Product.findOne({ product_id });
   if (existingProduct) {
     return NextResponse.json(
       { error: "Product ID already exists" },
-      { status: 400 }
+      { status: 400 },
     );
   }
-  await Product.create({ product_id, product_name, price, amount });
+  await Product.create({
+    product_id,
+    product_name,
+    category: category || "ทั่วไป",
+    price,
+    amount,
+  });
   return NextResponse.json({ message: "Product added" }, { status: 201 });
 }
 

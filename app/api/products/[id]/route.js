@@ -38,6 +38,7 @@ export async function PUT(req, { params }) {
     const {
       newProductId: product_id,
       newProductName: product_name,
+      newCategory: category,
       newPrice: price,
       newAmount: amount,
     } = body;
@@ -58,6 +59,7 @@ export async function PUT(req, { params }) {
       {
         product_id,
         product_name,
+        category: category || "ทั่วไป",
         price,
         amount,
       },
