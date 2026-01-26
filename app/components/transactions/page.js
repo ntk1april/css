@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -80,12 +80,75 @@ export default function Transactions() {
       เงินทอน: txn.change_amount.toFixed(2),
     }));
 
+    const totalSales = filteredTransactions.reduce(
+      (sum, txn) => sum + txn.total_amount,
+      0,
+    );
+
+    excelData.push({
+      รหัสการขาย: "",
+      วันที่และเวลา: "",
+      ชื่อสมาชิก: "ยอดขายทั้งหมด",
+      รหัสสมาชิก: "",
+      จำนวนสินค้า: "",
+      ยอดรวม: totalSales.toFixed(2) + " บาท",
+      ยอดที่จ่าย: "",
+      เงินทอน: "",
+    });
+
     // Create worksheet
     const ws = XLSX.utils.json_to_sheet(excelData);
 
     // Create workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+
+    // เปลี่ยนสีแถวแรก (header)
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        fill: {
+          fgColor: { rgb: "1F4E78" }, // น้ำเงินเข้ม
+        },
+        font: {
+          color: { rgb: "FFFFFF" }, // ตัวอักษรขาว
+          bold: true,
+        },
+        alignment: {
+          horizontal: "center",
+          vertical: "center",
+        },
+      };
+    }
+
+    ws["!cols"] = [
+      { width: 20 },
+      { width: 20 },
+      { width: 20 },
+      { width: 12 },
+      { width: 12 },
+      { width: 10 },
+      { width: 10 },
+      { width: 10 },
+      { width: 10 },
+    ];
+
+    const lastRow = range.e.r;
+
+    // ตัวหนาทั้งแถวสรุป
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell = XLSX.utils.encode_cell({ r: lastRow, c: C });
+      if (!ws[cell]) continue;
+
+      ws[cell].s = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "FFF2CC" } }, // เหลืองอ่อน
+      };
+    }
 
     // Generate filename with date
     const filename = `รายงานการขายในวันที่_${new Date().toISOString().split("T")[0]}.xlsx`;
@@ -339,7 +402,7 @@ export default function Transactions() {
             </p>
           </div>
           <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 text-white p-6 rounded-xl shadow-lg">
-            <h3 className="text-lg font-semibold mb-2">ราคาเฉลี่ยต่อการขาย</h3>
+            <h3 className="text-lg font-semibold mb-2">ราคาเฉลี่ยต่อบิล</h3>
             <p className="text-4xl font-bold">
               {filteredTransactions.length > 0
                 ? (

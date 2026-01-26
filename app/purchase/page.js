@@ -550,6 +550,7 @@ export default function Purchase() {
           </h2>
           <form onSubmit={handleBarcodeSubmit} className="flex gap-4">
             <input
+              autoFocus
               ref={barcodeInputRef}
               type="text"
               value={barcode}

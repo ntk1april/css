@@ -117,7 +117,7 @@ const Navbar = () => {
             {/* Product Management - Admin Only */}
             {user?.role === "admin" && (
               <Link
-                href="/components/product"
+                href="/components/products"
                 className="px-4 py-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-all duration-300 font-medium"
               >
                 📦 จัดการข้อมูลสินค้า
@@ -127,7 +127,7 @@ const Navbar = () => {
             {/* Member Management - Admin Only */}
             {user?.role === "admin" && (
               <Link
-                href="/components/member"
+                href="/components/members"
                 className="px-4 py-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-all duration-300 font-medium"
               >
                 👥 จัดการข้อมูลสมาชิก
@@ -209,7 +209,7 @@ const Navbar = () => {
                 {user?.role === "admin" && (
                   <li>
                     <Link
-                      href="/components/product"
+                      href="/components/products"
                       className="text-gray-700 hover:bg-indigo-50 font-medium"
                     >
                       📦 สินค้า
@@ -221,7 +221,7 @@ const Navbar = () => {
                 {user?.role === "admin" && (
                   <li>
                     <Link
-                      href="/components/member"
+                      href="/components/members"
                       className="text-gray-700 hover:bg-indigo-50 font-medium"
                     >
                       👥 สมาชิก
