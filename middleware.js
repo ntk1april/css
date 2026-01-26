@@ -18,6 +18,25 @@ export function middleware(request) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Check role-based access for admin-only routes
+  if (token) {
+    try {
+      const user = JSON.parse(token);
+      const adminOnlyPaths = ["/components/product", "/components/member"];
+      const isAdminOnlyPath = adminOnlyPaths.some((path) =>
+        pathname.startsWith(path),
+      );
+
+      // If trying to access admin-only route without admin role
+      if (isAdminOnlyPath && user.role !== "admin") {
+        // Redirect to main page
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    } catch (error) {
+      console.error("Error parsing user token:", error);
+    }
+  }
+
   // If logged in and trying to access login page, redirect to main
   if (isPublicPath && token && pathname === "/login") {
     return NextResponse.redirect(new URL("/components/main", request.url));

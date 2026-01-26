@@ -54,7 +54,7 @@ export default function Main() {
       <div className="max-w-md mx-auto">
         <div className="card-modern">
           <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-            เข้าสู่ระบบ
+            กรุณากรอกรหัสสมาชิก
           </h2>
           <p className="text-center text-gray-600 mb-6">
             กรุณากรอกรหัสสมาชิกเพื่อเข้าหน้าซื้อสินค้า
