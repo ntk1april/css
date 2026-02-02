@@ -22,7 +22,7 @@ export function middleware(request) {
   if (token) {
     try {
       const user = JSON.parse(token);
-      const adminOnlyPaths = ["/components/product", "/components/member"];
+      const adminOnlyPaths = ["/components/products", "/components/members"];
       const isAdminOnlyPath = adminOnlyPaths.some((path) =>
         pathname.startsWith(path),
       );
