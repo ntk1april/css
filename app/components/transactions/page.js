@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx-js-style";
+import Swal from "sweetalert2";
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -17,6 +18,8 @@ export default function Transactions() {
   const [error, setError] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchMembers();
@@ -57,6 +60,17 @@ export default function Transactions() {
     if (selectedMember === "all") return true;
     return txn.member_id.toString() === selectedMember;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, selectedDate, selectedMember]);
 
   const calculateTotalRevenue = () => {
     return filteredTransactions.reduce((sum, txn) => sum + txn.total_amount, 0);
@@ -150,11 +164,18 @@ export default function Transactions() {
       };
     }
 
-    // Generate filename with date
+    // Generate filename with current date
     const filename = `รายงานการขายในวันที่_${new Date().toISOString().split("T")[0]}.xlsx`;
 
-    // Save file
+    // Download file
     XLSX.writeFile(wb, filename);
+
+    Swal.fire({
+      icon: "success",
+      title: "ดาวน์โหลดไฟล์เรียบร้อยแล้ว",
+      showConfirmButton: false,
+      timer: 1500,
+    });
   };
 
   const formatDate = (dateString) => {
@@ -224,7 +245,7 @@ export default function Transactions() {
             disabled={filteredTransactions.length === 0}
             className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            📊 ดาวน์โหลดรายงาน
+            📥 ดาวน์โหลดรายงาน
           </button>
         </div>
       </div>
@@ -460,7 +481,7 @@ export default function Transactions() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((txn) => (
+                  {currentTransactions.map((txn) => (
                     <tr key={txn._id}>
                       <td className="font-mono text-sm text-center">
                         {txn.transaction_id}
@@ -502,6 +523,62 @@ export default function Transactions() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!loading && filteredTransactions.length > 0 && (
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                แสดง {startIndex + 1}-
+                {Math.min(endIndex, filteredTransactions.length)} จาก{" "}
+                {filteredTransactions.length} รายการ
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  ← ก่อนหน้า
+                </button>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  ถัดไป →
+                </button>
+              </div>
             </div>
           )}
         </div>

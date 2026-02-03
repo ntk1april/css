@@ -24,6 +24,8 @@ export default function Members() {
     direction: "ascending",
   });
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch members from the server
   const fetchMembers = async () => {
@@ -270,6 +272,17 @@ export default function Members() {
     return filtered;
   }, [memberList, searchTerm, gradeFilter, sortConfig]);
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentMembers = filteredMembers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, gradeFilter]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Page Header */}
@@ -395,7 +408,7 @@ export default function Members() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredMembers.map((member) => (
+                  {currentMembers.map((member) => (
                     <tr key={member._id}>
                       <td className="font-mono text-sm text-center">
                         {member.member_id}
@@ -457,6 +470,71 @@ export default function Members() {
               </table>
             </div>
           )}
+
+          {/* Pagination Controls */}
+          {!loading && filteredMembers.length > 0 && (
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                แสดง {startIndex + 1}-
+                {Math.min(endIndex, filteredMembers.length)} จาก{" "}
+                {filteredMembers.length} รายการ
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  ← ก่อนหน้า
+                </button>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  ถัดไป →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="btn-primary-gradient"
+          >
+            + เพิ่มสมาชิกใหม่
+          </button>
         </div>
       </div>
 

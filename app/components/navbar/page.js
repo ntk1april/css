@@ -148,7 +148,9 @@ const Navbar = () => {
             <div className="flex items-center gap-2 ml-4 pl-4 border-l border-white border-opacity-30">
               {isMounted && user ? (
                 <>
-                  <span className="text-white text-sm">👤 {user.username}</span>
+                  <span className="text-white text-sm font-bold uppercase mr-2">
+                    👤 {user.username}
+                  </span>
                   <button
                     onClick={handleLogout}
                     className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-300 font-medium"

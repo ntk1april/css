@@ -34,7 +34,7 @@ const User = mongoose.models.User || mongoose.model("User", userSchema);
 const connectDB = async () => {
   try {
     // Change this to your MongoDB connection string
-    await mongoose.connect("mongodb://localhost:27017/css", {
+    await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

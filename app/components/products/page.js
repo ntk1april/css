@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+import * as XLSX from "xlsx-js-style";
 
 export default function Products() {
   const [list, setList] = useState([]);
@@ -22,6 +23,8 @@ export default function Products() {
     key: "product_id",
     direction: "ascending",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch products from the server
   const fetchProducts = async () => {
@@ -225,6 +228,17 @@ export default function Products() {
     return filtered;
   }, [list, searchTerm, categoryFilter, sortConfig]);
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter]);
+
   const getCategoryBadgeColor = (category) => {
     const colors = {
       อาหาร: "bg-green-100 text-green-700",
@@ -237,6 +251,70 @@ export default function Products() {
     return colors[category] || "bg-gray-100 text-gray-700";
   };
 
+  const handleDownloadReport = () => {
+    // Prepare data for Excel
+    const excelData = list.map((product) => ({
+      รหัสสินค้า: product.product_id,
+      ชื่อสินค้า: product.product_name,
+      หมวดหมู่: product.category || "ทั่วไป",
+      "ราคา (บาท)": product.price,
+      "จำนวน (ชิ้น)": product.amount,
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+
+    // เปลี่ยนสีแถวแรก (header)
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        fill: {
+          fgColor: { rgb: "1F4E78" }, // น้ำเงินเข้ม
+        },
+        font: {
+          color: { rgb: "FFFFFF" }, // ตัวอักษรขาว
+          bold: true,
+        },
+        alignment: {
+          horizontal: "center",
+          vertical: "center",
+        },
+      };
+    }
+
+    // Set column widths
+    ws["!cols"] = [
+      { width: 15 }, // รหัสสินค้า
+      { width: 30 }, // ชื่อสินค้า
+      { width: 15 }, // หมวดหมู่
+      { width: 15 }, // ราคา
+      { width: 15 }, // จำนวน
+    ];
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "รายการสินค้า");
+
+    // Generate filename with current date
+    const date = new Date();
+    const filename = `รายงานสินค้า_${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(wb, filename);
+
+    Swal.fire({
+      icon: "success",
+      title: "ดาวน์โหลดสำเร็จ!",
+      text: "ไฟล์รายงานถูกดาวน์โหลดเรียบร้อยแล้ว",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Page Header */}
@@ -246,9 +324,17 @@ export default function Products() {
             <h1 className="text-4xl font-bold mb-2">หน้าจัดการสินค้า</h1>
             <p className="text-indigo-100">จัดการสินค้าของคุณ</p>
           </div>
-          <button onClick={handleAdd} className="btn-primary-gradient">
-            + เพิ่มสินค้าใหม่
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => handleDownloadReport()}
+              className="btn-success-gradient"
+            >
+              📥 ดาวน์โหลดรายงาน
+            </button>
+            <button onClick={handleAdd} className="btn-primary-gradient">
+              + เพิ่มสินค้าใหม่
+            </button>
+          </div>
         </div>
       </div>
 
@@ -391,7 +477,7 @@ export default function Products() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((product) => (
+                  {currentProducts.map((product) => (
                     <tr key={product._id}>
                       <td className="font-mono text-sm text-center">
                         {product.product_id}
@@ -444,6 +530,71 @@ export default function Products() {
               </table>
             </div>
           )}
+
+          {/* Pagination Controls */}
+          {!loading && filteredProducts.length > 0 && (
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                แสดง {startIndex + 1}-
+                {Math.min(endIndex, filteredProducts.length)} จาก{" "}
+                {filteredProducts.length} รายการ
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  ← ก่อนหน้า
+                </button>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  ถัดไป →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="btn-primary-gradient"
+          >
+            + เพิ่มสินค้าใหม่
+          </button>
         </div>
       </div>
 
