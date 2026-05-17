@@ -2,7 +2,7 @@
 
 A comprehensive Point of Sale (POS) system with user authentication and cart persistence, built with Next.js, MongoDB, and TailwindCSS.
 
-## 🚀 Release Version
+## 🚀 Live Demo
 
 https://css-pkkv.vercel.app/
 
