@@ -2,9 +2,11 @@
 
 A comprehensive Point of Sale (POS) system with user authentication and cart persistence, built with Next.js, MongoDB, and TailwindCSS.
 
-## 🚀 Release Version
+## 🚀 Live demo
 
-https://css-pkkv.vercel.app/
+Go to [CSS - Cooperative Sale System](https://css-pkkv.vercel.app/) → Login with username `staff` and password `qwerty`
+
+and test member id : `1`, product id : `1`
 
 ## 🎯 Key Features
 
